@@ -1,0 +1,31 @@
+
+[
+    {
+        "id":1,
+        "title":"buy groceries",
+        "description":"Get milk eggs , bread, and fruits",
+        "completed":false,
+        "duedate":"30-08-2025"
+    },
+    {
+        "id":2,
+        "title":"buy pampers",
+        "description":"2 bundles, 1 large, 1 medium",
+        "completed":false,
+        "duedate":"10-09-2025"
+    },
+    {
+        "id":3,
+        "title":"recieve medical reports",
+        "description":"recieve medical reports of Abbu g",
+        "completed":false,
+        "duedate":"31-08-2025"
+    },
+    {
+        "id":4,
+        "title":"Go Back home",
+        "description":"After complete duty go back to home",
+        "completed":false,
+        "duedate":"01-09-2025"
+    }
+]
