@@ -4,6 +4,7 @@ from openai import AsyncOpenAI
 from agents import Agent, OpenAIChatCompletionsModel, Runner, function_tool
 from dotenv import load_dotenv
 from datetime import datetime
+from typing import Optional, Union
 import os
 
 load_dotenv()
@@ -67,12 +68,76 @@ def fetch_todos():
     except Exception as e:
         raise Exception(f"Failed to fetch todos: {str(e)}")
 
+# update todos in mongodb by title match
+@function_tool
+def update_todo(title: str, new_title: str = "", description: str = "", due_date: str = ""):
+    """
+    goal:
+        update the todos in mongodb by title match.
+    args:
+        title: the current title of the todo to update.
+        new_title: the new title of the todo (leave empty to not change).
+        description: the new description of the todo (leave empty to not change).
+        due_date: the new due date of the todo (leave empty to not change).
+    """
+    try:
+        # Validate title
+        if not title:
+            raise ValueError("Title is required to find the todo to update.")
+        
+        # Build update document with only provided fields
+        update_doc = {}
+        if new_title and new_title.strip():
+            update_doc["title"] = new_title
+        if description and description.strip():
+            update_doc["description"] = description
+        if due_date and due_date.strip():
+            try:
+                parsed_date = datetime.strptime(due_date, "%d %B %Y").isoformat()
+            except ValueError:
+                parsed_date = due_date
+            update_doc["due_date"] = parsed_date
+        
+        # Add updated timestamp
+        update_doc["updated_at"] = datetime.utcnow().isoformat() + 'Z'
+        
+        if not update_doc:
+            raise ValueError("At least one field must be provided to update.")
+        
+        # Update the todo by title match
+        result = mongo_client['todo']['todo'].update_one(
+            {"title": title},
+            {"$set": update_doc}
+        )
+        
+        if result.matched_count == 0:
+            return f"No todo found with title: '{title}'"
+        elif result.modified_count == 0:
+            return f"Todo with title '{title}' found but no changes were made"
+        else:
+            return f"Todo with title '{title}' updated successfully"
+            
+    except Exception as e:
+        raise Exception(f"Failed to update todo: {str(e)}")
+        
+# delete todos in mongodb by title match
+@function_tool
+def delete_todo(title: str):
+    """
+    goal:
+        delete todos in mongodb by title match.
+    """
+    mongo_client['todo']['todo'].delete_one({"title": title})
+    return f"Todo with title '{title}' deleted successfully"
+
+
 # Agent definition (update instructions to match title/desc)
 agent = Agent(
     name="Todo Agent",
     instructions="""You are a helpful todo management agent. You can:
 1. Create new todos with title, description, and due date
 2. Fetch and display all existing todos
+3. Update existing todos by title match with new title, description, due date, or completion status
 
 When displaying todos, format them nicely with:
 - Title
@@ -81,9 +146,11 @@ When displaying todos, format them nicely with:
 - Created Date
 - ID
 
+When updating todos, you need the current title of the todo. If the user wants to update a todo but doesn't provide the title, first fetch all todos to show them the available options with their titles.
+
 Always use the fetch_todos tool when the user asks to see their todos, list todos, or show todos.""",
     model=OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client),
-    tools=[create_todo, fetch_todos]
+    tools=[create_todo, fetch_todos, update_todo, delete_todo]
 )
 
 query = input("Enter the prompt: ")
