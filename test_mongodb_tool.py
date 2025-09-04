@@ -19,7 +19,7 @@ try:
 except Exception as e:
     print(f"Connection failed: {e}")
 
-client = AsyncOpenAI(api_key=gemini_api_key, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")  # Verify URL
+client = AsyncOpenAI(api_key=gemini_api_key, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
 
 @function_tool
 def create_todo(title: str, description: str, due_date: str):
@@ -30,15 +30,13 @@ def create_todo(title: str, description: str, due_date: str):
         title: the title of the todo.
         description: the description of the todo.
         due_date: the due date of the todo.
-    
     """
     if not title or not description:
         raise ValueError("Title and description required.")
-    # Optional: Parse due_date to ISO
     try:
-        parsed_date = datetime.strptime(due_date, "%d %B %Y").isoformat()  # e.g., "4 september 2025" -> "2025-09-04T00:00:00"
+        parsed_date = datetime.strptime(due_date, "%d %B %Y").isoformat()
     except ValueError:
-        parsed_date = due_date  # Fallback
+        parsed_date = due_date
     doc = {
         "title": title,
         "description": description,
@@ -46,12 +44,11 @@ def create_todo(title: str, description: str, due_date: str):
         "created_at": datetime.utcnow().isoformat() + 'Z'
     }
     try:
-        result = mongo_client['todo']['todo'].insert_one(doc)  # Use correct client and names
+        result = mongo_client['todo']['todo'].insert_one(doc)
         return f"Todo added: {description} (ID: {result.inserted_id})."
     except Exception as e:
         raise Exception(f"Failed to create todo: {str(e)}")
 
-# fetch todos from mongodb and return as a list
 @function_tool
 def fetch_todos():
     """
@@ -60,34 +57,20 @@ def fetch_todos():
     """
     try:
         todos = list(mongo_client['todo']['todo'].find())
-        # Convert ObjectId to string for JSON serialization
         for todo in todos:
             todo['_id'] = str(todo['_id'])
         return todos
     except Exception as e:
         raise Exception(f"Failed to fetch todos: {str(e)}")
 
-# Agent definition (update instructions to match title/desc)
-agent = Agent(
-    name="Todo Agent",
-    instructions="""You are a helpful todo management agent. You can:
-1. Create new todos with title, description, and due date
-2. Fetch and display all existing todos
-
-When displaying todos, format them nicely with:
-- Title
-- Description  
-- Due Date
-- Created Date
-- ID
-
-Always use the fetch_todos tool when the user asks to see their todos, list todos, or show todos.""",
-    model=OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client),
-    tools=[create_todo, fetch_todos]
-)
-
-query = input("Enter the prompt: ")
-result = Runner.run_sync(agent, query)
-print(result.final_output)
+# Test the fetch_todos function directly
+print("Testing fetch_todos function...")
+try:
+    todos = fetch_todos()
+    print(f"Found {len(todos)} todos:")
+    for todo in todos:
+        print(f"- {todo.get('title', 'No title')}: {todo.get('description', 'No description')}")
+except Exception as e:
+    print(f"Error: {e}")
 
 mongo_client.close()
