@@ -1,32 +1,25 @@
 import asyncio
-from openai import AsyncOpenAI
-from agents import Agent, OpenAIResponsesModel, Runner, WebSearchTool
 import os
 from dotenv import load_dotenv
+from openai import AsyncOpenAI
+from agents import Agent, OpenAIResponsesModel, Runner, WebSearchTool
 
 # Load environment variables
 load_dotenv()
+openai_api_key = os.getenv('OPENAI_API_KEY')
 
-# Gemini API Key from .env
-gemini_api_key = os.getenv('GEMINI_API_KEY')
+# Initialize AsyncOpenAI client
+client = AsyncOpenAI(api_key=openai_api_key)
 
-# Initialize AsyncOpenAI client for Gemini
-client = AsyncOpenAI(
-    api_key=gemini_api_key,
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-)
-
-# Define the Agent with tool support
+# Define the Agent
 agent = Agent(
     name="Assistant",
     instructions="You are an expert of agentic AI.",
     model=OpenAIResponsesModel(
-        model="gemini-2.0-flash",
+        model="gpt-3.5-turbo",
         openai_client=client
     ),
-    tools=[
-        WebSearchTool(),
-    ]
+    tools=[WebSearchTool()]
 )
 
 # Take input from user
