@@ -21,7 +21,6 @@ class User:
 
 @function_tool  
 async def get_user_info(ctx: RunContextWrapper[User]) -> str:
-    
     """Fetches the user personal information to personalize responses. Whenver you require user personal info. call this function
 
     Args:
@@ -49,7 +48,7 @@ query = input("Enter the query: ")
 result = Runner.run_sync(
     agent,
     query,
-    context=User(user_id=1)
+    context=User(user_id=2)
 )
 
 print(result.final_output)
