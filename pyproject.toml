@@ -9,4 +9,5 @@ dependencies = [
     "openai-agents>=0.2.8",
     "pymongo[srv]>=4.14.1",
     "python-dotenv>=1.1.1",
+    "tavily-python>=0.7.12",
 ]
