@@ -60,9 +60,6 @@ local_processor = LocalTraceProcessor()
 set_trace_processors([local_processor])
 
 
-
-
-
 async def main():
     agent = Agent(
     name="Assistant",
